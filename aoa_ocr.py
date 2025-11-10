@@ -67,9 +67,8 @@ template_folder = r"template/"
 for f in filenames:
     f_pic = os.path.join(f_path, f)
     output = find_roi(f_pic)
-    cv2.imshow("output", output)
-    # cv2.imshow("char1", output[41:80, 0:40])
-    cv2.waitKey(0)
+    # cv2.imshow("output", output)
+    # cv2.waitKey(0)
     char1_img = output[41:80, 0:40]
     char2_img = output[0:40, 0:40]
     char3_img = output[41:80, 41:80]
