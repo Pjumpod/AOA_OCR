@@ -1,7 +1,5 @@
 import cv2
 import os
-import sys
-import glob
 from tkinter import filedialog
 import numpy as np
 from numpy import ndarray
