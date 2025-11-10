@@ -2,6 +2,7 @@ import cv2
 import os
 from tkinter import filedialog, Tk, Button
 import numpy as np
+import sys
 
 
 def find_roi(origin):
@@ -83,7 +84,10 @@ def openfiles():
         filename = filename[0]
     f_path = os.path.dirname(filename)
     filenames = [F for F in os.listdir(f_path) if F.lower().endswith('jpg')]
-    template_folder = r"model/"
+    if getattr(sys, 'frozen', False):
+        template_folder = os.path.join(sys._MEIPASS, r"model/")
+    else:
+        template_folder = r"model/"
     # f_mark = r"template/origin_mark.jpg"
     # marking = cv2.imread(f_mark,0)
     # first file.
