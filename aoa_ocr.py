@@ -4,6 +4,7 @@ import sys
 import glob
 from tkinter import filedialog
 import numpy as np
+from numpy import ndarray
 
 
 def find_roi(fullimagepath: str):
@@ -55,12 +56,34 @@ def find_roi(fullimagepath: str):
     return output
 
 
+def find_char(img, model_folder: str):
+    model_files = [F for F in os.listdir(model_folder) if F.lower().endswith('jpg')]
+    value_map = np.array([])
+    code_map = np.array([])
+    for model_f in model_files:
+        model_fullname = os.path.join(model_folder, model_f)
+        model_type = model_f.split("_")[0]
+        model_pic = cv2.imread(model_fullname, 0)
+        res_num = cv2.matchTemplate(img, model_pic, cv2.TM_CCOEFF_NORMED)
+        min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res_num)
+        value_map = np.append(value_map, max_val)
+        code_map = np.append(code_map, model_type)
+    if len(value_map) > 0:
+        print(value_map)
+        print(code_map)
+        max_value = value_map.max()
+        positions = np.where(value_map == max_value)[0]
+        return code_map[positions]
+    else:
+        return "N"
+
+
 filename = filedialog.askopenfilename(title="Choose only 1 file in the folder to be processed", filetypes=[('Picture File', '.jpg .JPG')])
 if not isinstance(filename, str):
     filename = filename[0]
 f_path = os.path.dirname(filename)
 filenames = [F for F in os.listdir(f_path) if F.lower().endswith('jpg')]
-template_folder = r"template/"
+template_folder = r"model/"
 # f_mark = r"template/origin_mark.jpg"
 # marking = cv2.imread(f_mark,0)
 # first file.
@@ -73,4 +96,13 @@ for f in filenames:
     char2_img = output[0:40, 0:40]
     char3_img = output[41:80, 41:80]
     char4_img = output[0:40, 41:80]
-    
+    ans = ""
+    c0 = find_char(char1_img, template_folder)
+    c1 = find_char(char2_img, template_folder)
+    c2 = find_char(char3_img, template_folder)
+    c3 = find_char(char4_img, template_folder)
+    ans = c0 + c1 + c2 + c3
+    cv2.imshow("output", output)
+    print(ans)
+    cv2.waitKey(0)
+cv2.destroyAllWindows()
