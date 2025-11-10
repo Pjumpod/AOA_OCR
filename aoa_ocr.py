@@ -1,8 +1,7 @@
 import cv2
 import os
-from tkinter import filedialog
+from tkinter import filedialog, Tk, Button
 import numpy as np
-from numpy import ndarray
 
 
 def find_roi(origin):
@@ -77,39 +76,49 @@ def find_char(img, model_folder: str):
     else:
         return "N"
 
+def openfiles():
+    btn.configure(state="disabled")
+    filename = filedialog.askopenfilename(title="Choose only 1 file in the folder to be processed", filetypes=[('Picture File', '.jpg .JPG')])
+    if not isinstance(filename, str):
+        filename = filename[0]
+    f_path = os.path.dirname(filename)
+    filenames = [F for F in os.listdir(f_path) if F.lower().endswith('jpg')]
+    template_folder = r"model/"
+    # f_mark = r"template/origin_mark.jpg"
+    # marking = cv2.imread(f_mark,0)
+    # first file.
+    for f in filenames:
+        f_pic = os.path.join(f_path, f)
+        origin = cv2.imread(f_pic)
+        output = find_roi(origin)
+        # cv2.imshow("output", output)
+        # cv2.waitKey(0)
+        char1_img = output[41:80, 0:40]
+        char2_img = output[0:40, 0:40]
+        char3_img = output[41:80, 41:80]
+        char4_img = output[0:40, 41:80]
+        ans = ""
+        c0 = find_char(char1_img, template_folder)
+        c1 = find_char(char2_img, template_folder)
+        c2 = find_char(char3_img, template_folder)
+        c3 = find_char(char4_img, template_folder)
+        ans = c0 + c1 + c2 + c3
+        if "N" in ans:
+            error_file = os.path.join(f_path, ans + ".jpg")
+            if os.path.exists(error_file):
+                os.remove(error_file)
+            cv2.imwrite(error_file, output)
+        # cv2.imshow("output", output)
+        # print(ans)
+        # cv2.waitKey(0)
+        cv2.destroyAllWindows()
+        os.rename(f_pic, os.path.join(f_path, ans + ".jpg"))
+    btn.configure(state="normal")
 
-filename = filedialog.askopenfilename(title="Choose only 1 file in the folder to be processed", filetypes=[('Picture File', '.jpg .JPG')])
-if not isinstance(filename, str):
-    filename = filename[0]
-f_path = os.path.dirname(filename)
-filenames = [F for F in os.listdir(f_path) if F.lower().endswith('jpg')]
-template_folder = r"model/"
-# f_mark = r"template/origin_mark.jpg"
-# marking = cv2.imread(f_mark,0)
-# first file.
-for f in filenames:
-    f_pic = os.path.join(f_path, f)
-    origin = cv2.imread(f_pic)
-    output = find_roi(origin)
-    # cv2.imshow("output", output)
-    # cv2.waitKey(0)
-    char1_img = output[41:80, 0:40]
-    char2_img = output[0:40, 0:40]
-    char3_img = output[41:80, 41:80]
-    char4_img = output[0:40, 41:80]
-    ans = ""
-    c0 = find_char(char1_img, template_folder)
-    c1 = find_char(char2_img, template_folder)
-    c2 = find_char(char3_img, template_folder)
-    c3 = find_char(char4_img, template_folder)
-    ans = c0 + c1 + c2 + c3
-    if "N" in ans:
-        error_file = os.path.join(f_path, ans + ".jpg")
-        if os.path.exists(error_file):
-            os.remove(error_file)
-        cv2.imwrite(error_file, output)
-    # cv2.imshow("output", output)
-    # print(ans)
-    # cv2.waitKey(0)
-    cv2.destroyAllWindows()
-    os.rename(f_pic, os.path.join(f_path, ans + ".jpg"))
+
+# Main
+root = Tk()
+root.geometry('100x100')
+btn = Button(root, text = 'Browse', pady=30, command=openfiles)
+btn.pack(side = 'top')
+root.mainloop()
