@@ -108,7 +108,7 @@ def openfiles():
         c3 = find_char(char4_img, template_folder)
         ans = c0 + c1 + c2 + c3
         if "N" in ans:
-            error_file = os.path.join(f_path, ans + ".jpg")
+            error_file = os.path.join(f_path, ans + "_model.jpg")
             if os.path.exists(error_file):
                 os.remove(error_file)
             cv2.imwrite(error_file, output)
