@@ -7,10 +7,9 @@ import numpy as np
 from numpy import ndarray
 
 
-def find_roi(fullimagepath: str):
+def find_roi(origin):
     sumcorner = 0
     lastcorner = 0
-    origin = cv2.imread(f_pic)
     rgb_color1 = np.asarray([120, 150, 150])
     rgb_color2 = np.asarray([250, 255, 255])
     gray = cv2.inRange(origin, rgb_color1, rgb_color2)
@@ -69,11 +68,14 @@ def find_char(img, model_folder: str):
         value_map = np.append(value_map, max_val)
         code_map = np.append(code_map, model_type)
     if len(value_map) > 0:
-        print(value_map)
-        print(code_map)
+        # print(value_map)
+        # print(code_map)
         max_value = value_map.max()
         positions = np.where(value_map == max_value)[0]
-        return code_map[positions]
+        position = positions[0]
+        charList = [str(element) for element in code_map]
+        char = charList[position]
+        return char
     else:
         return "N"
 
@@ -89,7 +91,8 @@ template_folder = r"model/"
 # first file.
 for f in filenames:
     f_pic = os.path.join(f_path, f)
-    output = find_roi(f_pic)
+    origin = cv2.imread(f_pic)
+    output = find_roi(origin)
     # cv2.imshow("output", output)
     # cv2.waitKey(0)
     char1_img = output[41:80, 0:40]
@@ -102,7 +105,13 @@ for f in filenames:
     c2 = find_char(char3_img, template_folder)
     c3 = find_char(char4_img, template_folder)
     ans = c0 + c1 + c2 + c3
-    cv2.imshow("output", output)
-    print(ans)
-    cv2.waitKey(0)
-cv2.destroyAllWindows()
+    if "N" in ans:
+        error_file = os.path.join(f_path, ans + ".jpg")
+        if os.path.exists(error_file):
+            os.remove(error_file)
+        cv2.imwrite(error_file, output)
+    # cv2.imshow("output", output)
+    # print(ans)
+    # cv2.waitKey(0)
+    cv2.destroyAllWindows()
+    os.rename(f_pic, os.path.join(f_path, ans + ".jpg"))
