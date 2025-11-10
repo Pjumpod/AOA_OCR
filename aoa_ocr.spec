@@ -4,8 +4,8 @@
 a = Analysis(
     ['aoa_ocr.py'],
     pathex=[],
-    binaries=[],
-    datas=[(r'./model/*', 'model')],
+    binaries=[(r'model/*', 'model')],
+    datas=[(r'model/*', 'model')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},

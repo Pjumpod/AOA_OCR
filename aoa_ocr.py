@@ -113,9 +113,9 @@ def openfiles():
                 os.remove(error_file)
             cv2.imwrite(error_file, output)
         # cv2.imshow("output", output)
-        # print(ans)
+        print(ans)
         # cv2.waitKey(0)
-        cv2.destroyAllWindows()
+        # cv2.destroyAllWindows()
         os.rename(f_pic, os.path.join(f_path, ans + ".jpg"))
     btn.configure(state="normal")
 
