@@ -4,13 +4,64 @@ from tkinter import filedialog, Tk, Button
 import numpy as np
 import sys
 
-
 def find_roi(origin):
+    global template_folder
+    rgb_color1 = np.asarray([120, 150, 150])
+    rgb_color2 = np.asarray([250, 255, 255])
+    gray = cv2.inRange(origin, rgb_color1, rgb_color2)
+    y, x = find_char_loc(gray, template_folder)
+    buffer2 = gray[x-150:x+150, y-150:y+150]
+    buffer1 = gray[x-150:x+150, y-150:y+150]
+    # cv2.imshow("output", buffer1)
+    # cv2.waitKey(0)
+    _, im_with_separated_blobs, stats, _ = cv2.connectedComponentsWithStats(buffer1)
+    sizes = stats[:, cv2.CC_STAT_AREA]
+    buffer1 = np.where(sizes[im_with_separated_blobs] <= 350, buffer1, 0)
+    _, im_with_separated_blobs, stats, _ = cv2.connectedComponentsWithStats(buffer1)
+    sizes = stats[:, cv2.CC_STAT_AREA]
+    buffer1 = np.where(sizes[im_with_separated_blobs] >= 100, buffer1, 0)
+    _, im_with_separated_blobs, stats, _ = cv2.connectedComponentsWithStats(buffer1)
+    sizes = stats[:, cv2.CC_STAT_WIDTH]
+    buffer1 = np.where(sizes[im_with_separated_blobs] <= 40, buffer1, 0)
+    _, im_with_separated_blobs, stats, _ = cv2.connectedComponentsWithStats(buffer1)
+    sizes = stats[:, cv2.CC_STAT_HEIGHT]
+    buffer1 = np.where(sizes[im_with_separated_blobs] <= 40, buffer1, 0)
+    _, im_with_separated_blobs, stats, _ = cv2.connectedComponentsWithStats(buffer1)
+    # cv2.imshow("output", buffer1)
+    # cv2.waitKey(0)
+    contours, _ = cv2.findContours(buffer1, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+    # cnt = max(contours, key=cv2.contourArea)
+    # x,y,w,h = cv2.boundingRect(cnt)
+    x1 = 8000
+    y1 = 8000
+    x2 = 0
+    y2 = 0
+    for cnt in contours:
+        x, y, w, h = cv2.boundingRect(cnt)
+        # print(x , y, w, h)
+        if x1 > x:
+            x1 = x
+        if x + w > x2:
+            x2 = x + w
+        if y1 > y:
+            y1 = y
+        if y + h > y2:
+            y2 = y + h
+    w = x2 - x1 + 10
+    h = y2 - y1 + 10
+    x = x1 - 5
+    y = y1 - 5
+    output=buffer2[y:y+h, x:x+w]
+    return output
+
+def find_roi_old(origin):
     sumcorner = 0
     lastcorner = 0
     rgb_color1 = np.asarray([120, 150, 150])
     rgb_color2 = np.asarray([250, 255, 255])
     gray = cv2.inRange(origin, rgb_color1, rgb_color2)
+    cv2.imshow("output", gray)
+    cv2.waitKey(0)
     buffer2 = gray[500:1200, 300:1200]
     gray = cv2.blur(gray, (5,5))
     _, gray = cv2.threshold(gray,150,255,cv2.THRESH_BINARY)
@@ -32,11 +83,16 @@ def find_roi(origin):
         c0 = coordinates[n]
         output = buffer1[c0[0]-20:c0[0]+120, c0[1]-20:c0[1]+120]
         n += 1
-        # print(output[0][0], output[0][-1], output[-1][0], output[-1][-1])
+        print(output[0][0], output[0][-1], output[-1][0], output[-1][-1])
+        # cv2.imshow("output", output)
+        # cv2.waitKey(0)
         lastcorner = output[-1][-1]
         sumcorner = output[0][0] + output[0][-1] + output[-1][0] + output[-1][-1]
     # Capture full area
     crosscheck = [1000001]
+    # cv2.imshow("output", output)
+    # cv2.waitKey(0)
+    print(c0)
     n = 0
     while sum(crosscheck) > 0:
         output = buffer2[c0[0] + 10:c0[0]+90, c0[1] + n :c0[1]+ 80 + n]
@@ -45,14 +101,26 @@ def find_roi(origin):
             for line in output:
                 crosscheck.append(int(line[-1]))
         except:
-            n = 0
-            break
+             n = 0
+             break
         crosscheck = crosscheck[3:len(crosscheck) - 3]
+         # print(crosscheck)
         output = buffer2[c0[0] + 10:c0[0]+90, c0[1] + n :c0[1]+ 80 + n]
         n += 1
     return output
 
-
+def find_char_loc(img, model_folder: str):
+    model_files = [F for F in os.listdir(model_folder) if F.lower().endswith('jpg')]
+    for model_f in model_files:
+        model_fullname = os.path.join(model_folder, model_f)
+        model_type = model_f.split("_")[0]
+        model_pic = cv2.imread(model_fullname, 0)
+        res_num = cv2.matchTemplate(img, model_pic, cv2.TM_CCOEFF_NORMED)
+        min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res_num)
+        if max_val > 0.8:
+            break
+    return max_loc
+    
 def find_char(img, model_folder: str):
     model_files = [F for F in os.listdir(model_folder) if F.lower().endswith('jpg')]
     value_map = np.array([])
@@ -78,6 +146,7 @@ def find_char(img, model_folder: str):
         return "N"
 
 def openfiles():
+    global template_folder
     btn.configure(state="disabled")
     filename = filedialog.askopenfilename(title="Choose only 1 file in the folder to be processed", filetypes=[('Picture File', '.jpg .JPG')])
     if not isinstance(filename, str):
@@ -92,11 +161,12 @@ def openfiles():
     # marking = cv2.imread(f_mark,0)
     # first file.
     for f in filenames:
+        print(f"running {f}")
         f_pic = os.path.join(f_path, f)
         origin = cv2.imread(f_pic)
         output = find_roi(origin)
-        # cv2.imshow("output", output)
-        # cv2.waitKey(0)
+        cv2.imshow("output", output)
+        cv2.waitKey(0)
         char1_img = output[41:80, 0:40]
         char2_img = output[0:40, 0:40]
         char3_img = output[41:80, 41:80]
@@ -115,7 +185,7 @@ def openfiles():
         # cv2.imshow("output", output)
         print(ans)
         # cv2.waitKey(0)
-        # cv2.destroyAllWindows()
+        cv2.destroyAllWindows()
         os.rename(f_pic, os.path.join(f_path, ans + ".jpg"))
     btn.configure(state="normal")
 
