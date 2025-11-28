@@ -165,8 +165,8 @@ def openfiles():
         f_pic = os.path.join(f_path, f)
         origin = cv2.imread(f_pic)
         output = find_roi(origin)
-        cv2.imshow("output", output)
-        cv2.waitKey(0)
+        # cv2.imshow("output", output)
+        # cv2.waitKey(0)
         char1_img = output[41:80, 0:40]
         char2_img = output[0:40, 0:40]
         char3_img = output[41:80, 41:80]
@@ -185,7 +185,7 @@ def openfiles():
         # cv2.imshow("output", output)
         print(ans)
         # cv2.waitKey(0)
-        cv2.destroyAllWindows()
+        # cv2.destroyAllWindows()
         os.rename(f_pic, os.path.join(f_path, ans + ".jpg"))
     btn.configure(state="normal")
 
